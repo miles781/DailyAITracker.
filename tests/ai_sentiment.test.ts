@@ -4,7 +4,7 @@ jest.mock('../lib/db', () => ({
   db: {}
 }));
 
-const { aiSummarizer } = require('../lib/aiSummarizer');
+import { aiSummarizer } from '../lib/aiSummarizer';
 
 describe('aiSummarizer sentiment analysis', () => {
   test('positive reflections produce positive sentiment', () => {
@@ -13,7 +13,8 @@ describe('aiSummarizer sentiment analysis', () => {
       { mood: 4, text: 'Good energy and focused on work.' },
     ];
 
-    const sentiment = aiSummarizer.analyzeSentiment(reflections as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sentiment = aiSummarizer.analyzeSentiment(reflections as any);
     expect(typeof sentiment).toBe('number');
     expect(sentiment).toBeGreaterThan(0);
   });
@@ -24,7 +25,8 @@ describe('aiSummarizer sentiment analysis', () => {
       { mood: 2, text: 'Struggling and anxious about work.' },
     ];
 
-    const sentiment = aiSummarizer.analyzeSentiment(reflections as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sentiment = aiSummarizer.analyzeSentiment(reflections as any);
     expect(typeof sentiment).toBe('number');
     expect(sentiment).toBeLessThan(0);
   });
@@ -35,7 +37,8 @@ describe('aiSummarizer sentiment analysis', () => {
       { mood: 3, text: 'Average day, nothing special.' },
     ];
 
-    const sentiment = aiSummarizer.analyzeSentiment(reflections as any);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sentiment = aiSummarizer.analyzeSentiment(reflections as any);
     expect(typeof sentiment).toBe('number');
     expect(Math.abs(sentiment)).toBeLessThanOrEqual(0.4);
   });

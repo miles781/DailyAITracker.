@@ -2,7 +2,7 @@ export {};
 // Mock DB to avoid loading Dexie's ESM bundle during unit tests
 jest.mock('../lib/db', () => ({ db: {} }));
 
-const { aiSummarizer } = require('../lib/aiSummarizer');
+import { aiSummarizer } from '../lib/aiSummarizer';
 
 describe('aiSummarizer forecasting', () => {
   test('high completion and consistency -> high probability', () => {

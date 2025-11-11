@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appState';
 import { Flame, TrendingUp, Zap } from 'lucide-react';
@@ -26,14 +27,23 @@ export default function StreakCard() {
   const motivationalQuotes = [
     "Consistency is the key to mastery. Keep going!",
     "Small daily improvements lead to stunning results.",
-    "Your future self will thank you for today's effort.",
+    "Your future self will thank you for today&apos;s effort.",
     "Progress, not perfection. Every step counts.",
-    "You're building habits that will last a lifetime."
+    "You&apos;re building habits that will last a lifetime."
   ];
+  const [randomQuote, setRandomQuote] = useState<string>(motivationalQuotes[0]);
+  const [weeklyActivity, setWeeklyActivity] = useState<boolean[]>([]);
 
-  const randomQuote = motivationalQuotes[
-    Math.floor(Math.random() * motivationalQuotes.length)
-  ];
+  useEffect(() => {
+    // Initialize a stable random quote and weekly activity mock once on mount
+    setRandomQuote(
+      motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
+    );
+
+    setWeeklyActivity(
+      Array.from({ length: 7 }, () => Math.random() > 0.3)
+    );
+  }, []);
 
   return (
     <motion.div
@@ -111,7 +121,7 @@ export default function StreakCard() {
             date.setDate(date.getDate() - (6 - i));
             const dayName = date.toLocaleDateString('en', { weekday: 'short' });
             const isToday = date.toDateString() === new Date().toDateString();
-            const hasActivity = Math.random() > 0.3; // Mock data
+            const hasActivity = weeklyActivity[i] ?? false; // Mock data (stable per mount)
             
             return (
               <motion.div

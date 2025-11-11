@@ -204,12 +204,12 @@ export class AIPlanner {
       } else {
         // DB write not available in this environment (tests or missing mock)
         // Log at debug level and continue without failing the plan generation flow
-        // eslint-disable-next-line no-console
+         
         console.warn('db.aiSummaries.add not available — plan will not be persisted in this environment');
       }
     } catch (err) {
       // Swallow persistence errors to avoid failing plan generation; log for visibility
-      // eslint-disable-next-line no-console
+       
       console.error('Failed to persist AI plan:', err);
     }
   }
