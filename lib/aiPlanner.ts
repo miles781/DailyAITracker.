@@ -225,7 +225,8 @@ export class AIPlanner {
     if (!summary) return null;
 
     try {
-      return await encryptionService.decryptUserData(summary.encryptedData);
+      const plan = await encryptionService.decryptUserData(summary.encryptedData);
+      return plan as AIPlan;
     } catch (error) {
       console.error('Error decrypting AI plan:', error);
       return null;

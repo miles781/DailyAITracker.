@@ -71,12 +71,12 @@ export class EncryptionService {
     this.key = key;
   }
 
-  async encryptUserData(data: any): Promise<string> {
+  async encryptUserData(data: unknown): Promise<string> {
     if (!this.key) throw new Error('Encryption key not set');
     return this.encrypt(JSON.stringify(data), this.key);
   }
 
-  async decryptUserData(encryptedData: string): Promise<any> {
+  async decryptUserData(encryptedData: string): Promise<unknown> {
     if (!this.key) throw new Error('Encryption key not set');
     const decrypted = await this.decrypt(encryptedData, this.key);
     return JSON.parse(decrypted);

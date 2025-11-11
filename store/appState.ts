@@ -34,7 +34,7 @@ interface ReflectionState {
 }
 
 interface BehaviorState {
-  logBehavior: (type: Behavior['type'], action: string, data?: any) => Promise<void>;
+  logBehavior: (type: Behavior['type'], action: string, data?: Record<string, unknown>) => Promise<void>;
 }
 
 interface StreakState {

@@ -51,7 +51,7 @@ export default function ReflectionCard({ reflection, onSave }: ReflectionCardPro
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-            ✨ Today's Reflection
+            ✨ Today&apos;s Reflection
           </h3>
           <motion.button
             onClick={handleEdit}

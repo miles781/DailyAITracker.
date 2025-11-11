@@ -24,16 +24,16 @@ export interface AnonymizedData {
 }
 
 export class AISummarizer {
-  private async decryptAndAggregate<T>(items: any[]): Promise<T[]> {
+  private async decryptAndAggregate<T>(items: Array<{ encryptedData: string }>): Promise<T[]> {
     const decryptedItems = await Promise.all(
-      items.map(async (item) => {
+      items.map(async (item: { encryptedData: string }) => {
         try {
           const parsed = await encryptionService.decryptUserData(item.encryptedData);
           // Normalize createdAt if it's a string so downstream logic can use Date methods
-          if (parsed && (parsed as any).createdAt && typeof (parsed as any).createdAt === 'string') {
+          if (parsed && typeof (parsed as Record<string, unknown>).createdAt === 'string') {
             try {
-              (parsed as any).createdAt = new Date((parsed as any).createdAt);
-            } catch (e) {
+              (parsed as Record<string, unknown>).createdAt = new Date((parsed as Record<string, unknown>).createdAt as string);
+            } catch (e: unknown) {
               // leave as-is if conversion fails
             }
           }
@@ -127,7 +127,7 @@ export class AISummarizer {
       const patterns = {
         bestPerformingCategory: this.findBestPerformingCategory(decryptedTasks),
         worstPerformingCategory: this.findWorstPerformingCategory(decryptedTasks),
-        moodCorrelation: this.calculateMoodCorrelation(decryptedTasks, decryptedReflections),
+        moodCorrelation: this.calculateMoodCorrelation(tasks, reflections),
         peakProductivity: this.findPeakProductivity(behaviors),
       };
 
@@ -154,11 +154,11 @@ export class AISummarizer {
     const negativeWords = ['tired', 'missed', 'failed', 'struggle', 'worse', 'sad', 'angry', 'frustrat', 'anxious', 'overwhelmed'];
 
     let score = 0;
-    reflections.forEach((r) => {
+    reflections.forEach((r: { mood?: number; text?: string }) => {
       const text = (r.text || '').toLowerCase();
       let local = 0;
-      positiveWords.forEach(w => { if (text.includes(w)) local += 1; });
-      negativeWords.forEach(w => { if (text.includes(w)) local -= 1; });
+      positiveWords.forEach((w: string) => { if (text.includes(w)) local += 1; });
+      negativeWords.forEach((w: string) => { if (text.includes(w)) local -= 1; });
       // incorporate mood if present (scale 1-5 -> -1..1)
       if (typeof r.mood === 'number') {
         local += (r.mood - 3) / 2; // mood 3 -> 0, 5 -> +1, 1 -> -1
@@ -171,15 +171,15 @@ export class AISummarizer {
     return Math.max(-1, Math.min(1, normalized));
   }
 
-  private calculateProductiveHours(behaviors: any[]): string[] {
+  private calculateProductiveHours(behaviors: Array<{ timestamp: Date }>): string[] {
     // Simple implementation - return default hours
     return ['09:00', '14:00', '16:00'];
   }
 
-  private findBestPerformingCategory(tasks: any[]): string {
+  private findBestPerformingCategory(tasks: Array<{ category: string; completed: boolean }>): string {
     if (tasks.length === 0) return 'general';
 
-    const categoryCompletion = tasks.reduce((acc, task) => {
+    const categoryCompletion = tasks.reduce((acc: Record<string, { total: number; completed: number }>, task: { category: string; completed: boolean }) => {
       if (!acc[task.category]) {
         acc[task.category] = { total: 0, completed: 0 };
       }
@@ -199,10 +199,10 @@ export class AISummarizer {
     return bestCategory?.category || 'general';
   }
 
-  private findWorstPerformingCategory(tasks: any[]): string {
+  private findWorstPerformingCategory(tasks: Array<{ category: string; completed: boolean }>): string {
     if (tasks.length === 0) return 'general';
 
-    const categoryCompletion = tasks.reduce((acc, task) => {
+    const categoryCompletion = tasks.reduce((acc: Record<string, { total: number; completed: number }>, task: { category: string; completed: boolean }) => {
       if (!acc[task.category]) {
         acc[task.category] = { total: 0, completed: 0 };
       }
@@ -222,11 +222,11 @@ export class AISummarizer {
     return worstCategory?.category || 'general';
   }
 
-  private calculateMoodCorrelation(tasks: any[], reflections: any[]): number {
+  private calculateMoodCorrelation(tasks: Array<{ createdAt: Date | string; completed: boolean }>, reflections: Array<{ date: string; mood: number }>): number {
     if (tasks.length === 0 || reflections.length === 0) return 0.5;
     
     // Simplified correlation calculation
-    const completedTasksByDay = tasks.reduce((acc, task) => {
+    const completedTasksByDay = tasks.reduce((acc: Record<string, { completed: number; total: number }>, task: { createdAt: Date | string; completed: boolean }) => {
       // Support both Date objects and ISO date strings
       let createdAtIso: string;
       try {
@@ -235,7 +235,7 @@ export class AISummarizer {
         } else {
           createdAtIso = new Date(task.createdAt).toISOString();
         }
-      } catch (e) {
+      } catch (e: unknown) {
         createdAtIso = new Date().toISOString();
       }
       const date = createdAtIso.split('T')[0];
@@ -248,7 +248,7 @@ export class AISummarizer {
     let correlationSum = 0;
     let count = 0;
 
-    reflections.forEach(reflection => {
+    reflections.forEach((reflection: { date: string; mood: number }) => {
       const dayData = completedTasksByDay[reflection.date];
       if (dayData && dayData.total > 0) {
         const completionRate = dayData.completed / dayData.total;
@@ -261,10 +261,10 @@ export class AISummarizer {
     return count > 0 ? correlationSum / count : 0.7;
   }
 
-  private findPeakProductivity(behaviors: any[]): string {
+  private findPeakProductivity(behaviors: Array<{ timestamp: Date }>): string {
     if (behaviors.length === 0) return '14:00';
 
-    const hourCounts = behaviors.reduce((acc, behavior) => {
+    const hourCounts = behaviors.reduce((acc: Record<number, number>, behavior: { timestamp: Date }) => {
       const hour = new Date(behavior.timestamp).getHours();
       acc[hour] = (acc[hour] || 0) + 1;
       return acc;

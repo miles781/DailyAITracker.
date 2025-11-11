@@ -1,5 +1,5 @@
 // Only run these tests if WebCrypto (crypto.subtle) is available in the environment.
-let encryptionService: any;
+let encryptionService: typeof import('../lib/encrypt').encryptionService;
 const hasWebCrypto = typeof global.crypto !== 'undefined' && !!global.crypto.subtle;
 
 (hasWebCrypto ? describe : describe.skip)('Encryption Service', () => {

@@ -10,7 +10,8 @@ import RewardTree from '../components/RewardTree';
 import StreakCard from '../components/StreakCard';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { aiPlanner } from '../lib/aiPlanner';
-import { Task } from '../lib/db';
+import { Task, Reflection } from '../lib/db';
+import type { AIPlan, AITaskSuggestion } from '../lib/aiPlanner';
 import { ChevronRight, Sparkles, Zap, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -30,7 +31,7 @@ export default function Home() {
     currentStreak,
   } = useAppStore();
 
-  const [aiPlan, setAiPlan] = useState<any>(null);
+  const [aiPlan, setAiPlan] = useState<AIPlan | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [activeTab, setActiveTab] = useState<'tasks' | 'plan' | 'reflection'>('tasks');
   const [isLoadingPlan, setIsLoadingPlan] = useState(false);
@@ -98,7 +99,7 @@ export default function Home() {
     setAddTaskModalOpen(true);
   };
 
-  const handleSaveReflection = async (reflectionData: any) => {
+  const handleSaveReflection = async (reflectionData: Omit<Reflection, 'id' | 'userId' | 'encryptedData'>) => {
     if (!user) return;
     
     try {
@@ -266,7 +267,7 @@ export default function Home() {
           {/* Today's Status */}
           <div className="card-hover p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-foreground/60 text-sm font-medium">Today's Status</span>
+              <span className="text-foreground/60 text-sm font-medium">Today&apos;s Status</span>
               <Sparkles className="w-4 h-4 text-purple-500" />
             </div>
             <div className="text-4xl font-bold">
@@ -321,7 +322,7 @@ export default function Home() {
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <span>📋</span> Today's Tasks
+                    <span>📋</span> Today&apos;s Tasks
                   </h2>
                   <motion.button
                     onClick={handleAddTask}
@@ -388,7 +389,7 @@ export default function Home() {
                     <div>
                       <h4 className="font-bold text-foreground mb-4">Recommended Tasks</h4>
                       <div className="space-y-3">
-                        {aiPlan.tasks.map((task: any, index: number) => (
+                        {aiPlan.tasks.map((task: AITaskSuggestion, index: number) => (
                           <motion.div
                             key={index}
                             initial={{ opacity: 0, x: -10 }}
