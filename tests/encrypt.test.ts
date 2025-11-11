@@ -1,0 +1,32 @@
+import { encryptionService } from '../lib/encrypt';
+
+describe('Encryption Service', () => {
+  let testKey: CryptoKey;
+
+  beforeAll(async () => {
+    testKey = await encryptionService.generateKey();
+  });
+
+  test('should encrypt and decrypt data correctly', async () => {
+    const originalData = 'Sensitive user data';
+    
+    const encrypted = await encryptionService.encrypt(originalData, testKey);
+    const decrypted = await encryptionService.decrypt(encrypted, testKey);
+    
+    expect(decrypted).toBe(originalData);
+    expect(encrypted).not.toBe(originalData);
+  });
+
+  test('should handle JSON data', async () => {
+    const testData = { 
+      message: 'Hello World', 
+      number: 42,
+      array: [1, 2, 3]
+    };
+    
+    const encrypted = await encryptionService.encryptUserData(testData);
+    const decrypted = await encryptionService.decryptUserData(encrypted);
+    
+    expect(decrypted).toEqual(testData);
+  });
+}); 

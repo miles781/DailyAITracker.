@@ -1,0 +1,248 @@
+/* Import Tailwind base layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom animation delays */
+@layer utilities {
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 98%;
+    --card-foreground: 240 10% 3.9%;
+    --primary: 262 83% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 186 94% 48%;
+    --secondary-foreground: 240 10% 3.9%;
+    --accent: 271 85% 58%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 217 19% 38%;
+    --muted-foreground: 240 10% 3.9%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262 83% 67%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 10%;
+    --card-foreground: 0 0% 98%;
+    --primary: 262 83% 67%;
+    --primary-foreground: 240 10% 3.9%;
+    --secondary: 186 94% 48%;
+    --secondary-foreground: 240 10% 3.9%;
+    --accent: 271 85% 58%;
+    --accent-foreground: 0 0% 100%;
+    --muted: 217 19% 68%;
+    --muted-foreground: 215 13% 34%;
+    --border: 220 13% 20%;
+    --input: 220 13% 20%;
+    --ring: 262 83% 67%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rounding" 1;
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-muted-foreground/50;
+  }
+}
+
+@layer components {
+  /* Glass morphism effect */
+  .glass {
+    @apply backdrop-blur-xl bg-white/30 dark:bg-black/20 border border-white/20 dark:border-white/10;
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-lg bg-slate-900/40 border border-slate-700/50;
+  }
+
+  /* Gradient AI effect */
+  .gradient-ai {
+    @apply bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500;
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  /* Depth shadow */
+  .shadow-depth {
+    @apply shadow-[0_4px_24px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_24px_rgba(0,0,0,0.3)];
+  }
+
+  /* Glow effect */
+  .glow-primary {
+    @apply shadow-[0_0_8px_2px_rgba(139,92,246,0.5)] dark:shadow-[0_0_12px_3px_rgba(139,92,246,0.3)];
+  }
+
+  .glow-accent {
+    @apply shadow-[0_0_12px_3px_rgba(147,51,234,0.4)] dark:shadow-[0_0_16px_4px_rgba(147,51,234,0.25)];
+  }
+
+  /* Button base styles */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium transition-smooth;
+  }
+
+  .btn-primary {
+    @apply btn-base bg-primary text-primary-foreground hover:shadow-depth active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn-base bg-secondary text-secondary-foreground hover:shadow-depth active:scale-95;
+  }
+
+  .btn-outline {
+    @apply btn-base border-2 border-primary text-primary hover:bg-primary/5 active:scale-95;
+  }
+
+  /* Card base */
+  .card {
+    @apply rounded-2xl border border-border bg-card text-card-foreground shadow-depth transition-smooth;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-[0_12px_32px_rgba(139,92,246,0.15)] dark:hover:shadow-[0_12px_32px_rgba(139,92,246,0.1)] hover:translate-y-[-2px];
+  }
+
+  /* Input styles */
+  .input-base {
+    @apply w-full px-4 py-3 rounded-xl bg-input border border-input text-foreground placeholder:text-muted-foreground transition-smooth;
+  }
+
+  .input-base:focus {
+    @apply outline-none ring-2 ring-ring/50 border-transparent;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary;
+  }
+
+  .badge-secondary {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-secondary/10 text-secondary;
+  }
+}
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+
+/* Body & typography */
+body {
+  font-family: 'Inter', 'Orbitron', sans-serif;
+  background-color: #0f0f2d;
+  color: white;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+a {
+  color: #1e90ff;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', sans-serif;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}
+
+h1 { font-size: 2.5em; }
+h2 { font-size: 2em; }
+h3 { font-size: 1.75em; }
+h4 { font-size: 1.5em; }
+
+/* Custom utility shadows */
+@layer utilities {
+  .shadow-primary-glow {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.1);
+  }
+  .shadow-pink-glow {
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3), 0 0 40px rgba(255, 0, 255, 0.1);
+  }
+  .shadow-green-glow {
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3), 0 0 40px rgba(0, 255, 0, 0.1);
+  }
+  .shadow-yellow-glow {
+    box-shadow: 0 0 20px rgba(255, 255, 0, 0.3), 0 0 40px rgba(255, 255, 0, 0.1);
+  }
+}
+
+/* Smooth scrolling & focus */
+html { scroll-behavior: smooth; }
+
+*:focus {
+  outline: 2px solid transparent;
+}
+
+/* Gradient animation */
+@keyframes gradientMove {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  animation: gradientMove 6s ease infinite;
+  background-size: 300% 300%;
+}
+
+/* Interactive transitions */
+button, a, .interactive {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus visibility */
+button:focus-visible, a:focus-visible {
+  outline: 2px solid #00e0ff;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Pulse glow animation */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0f0f2d; }
+::-webkit-scrollbar-thumb {
+  background: #00e0ff;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: #30ff4f; }
