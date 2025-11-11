@@ -128,7 +128,8 @@ jest.mock('../lib/encrypt', () => ({
         return {};
       }
     }),
-    encryptUserData: jest.fn(async (data: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      encryptUserData: jest.fn(async (data: any) => {
       return JSON.stringify(data);
     })
   }

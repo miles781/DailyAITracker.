@@ -5,7 +5,7 @@ import { useAppStore } from '../../store/appState';
 import { db, type Task as DbTask, type Reflection as DbReflection } from '../../lib/db';
 import { encryptionService } from '../../lib/encrypt';
 import { 
-  LineChart, Line, BarChart, Bar, PieChart, Pie, 
+  LineChart, Line, PieChart, Pie, 
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
 
@@ -177,9 +177,10 @@ export default function InsightsPage() {
 
   const processWeeklyStreak = (tasks: Task[]): { day: string; completed: boolean }[] => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const dayCompletion = days.map((day: string) => ({ 
+    const dayCompletion = days.map((day: string, i: number) => ({ 
       day, 
-      completed: Math.random() > 0.3 
+      // Deterministic mock activity based on date to avoid Math.random in render
+      completed: ((new Date().getDate() + i) % 4) !== 0
     }));
     return dayCompletion;
   };

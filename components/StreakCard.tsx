@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useAppStore } from '../store/appState';
 import { Flame, TrendingUp, Zap } from 'lucide-react';
@@ -31,19 +31,10 @@ export default function StreakCard() {
     "Progress, not perfection. Every step counts.",
     "You&apos;re building habits that will last a lifetime."
   ];
-  const [randomQuote, setRandomQuote] = useState<string>(motivationalQuotes[0]);
-  const [weeklyActivity, setWeeklyActivity] = useState<boolean[]>([]);
-
-  useEffect(() => {
-    // Initialize a stable random quote and weekly activity mock once on mount
-    setRandomQuote(
-      motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
-    );
-
-    setWeeklyActivity(
-      Array.from({ length: 7 }, () => Math.random() > 0.3)
-    );
-  }, []);
+  // Deterministic selection based on date to avoid impure calls during render
+  const today = new Date();
+  const quoteIndex = today.getDate() % motivationalQuotes.length;
+  const randomQuote = motivationalQuotes[quoteIndex];
 
   return (
     <motion.div
@@ -83,7 +74,7 @@ export default function StreakCard() {
         <div className="flex items-center justify-between">
           <span className="text-sm font-semibold text-foreground flex items-center gap-1">
             <Zap className="w-4 h-4 text-amber-500" />
-            Today's Progress
+              Today&apos;s Progress
           </span>
           <span className="text-sm font-bold text-primary">{Math.round(completionRate)}%</span>
         </div>
@@ -106,7 +97,7 @@ export default function StreakCard() {
       {/* Motivational Quote */}
       <div className="mb-6 p-4 glass rounded-xl">
         <p className="text-sm text-foreground leading-relaxed italic">
-          "{randomQuote}"
+          &ldquo;{randomQuote}&rdquo;
         </p>
       </div>
 
@@ -121,7 +112,8 @@ export default function StreakCard() {
             date.setDate(date.getDate() - (6 - i));
             const dayName = date.toLocaleDateString('en', { weekday: 'short' });
             const isToday = date.toDateString() === new Date().toDateString();
-            const hasActivity = weeklyActivity[i] ?? false; // Mock data (stable per mount)
+            // Deterministic mock activity based on date to avoid Math.random in render
+            const hasActivity = ((date.getDate() + i) % 4) !== 0;
             
             return (
               <motion.div

@@ -380,7 +380,7 @@ export default function Home() {
                       <p className="text-xs text-primary font-bold uppercase tracking-widest mb-2">Focus Area</p>
                       <h3 className="text-lg font-bold text-foreground mb-3">{aiPlan.focusArea}</h3>
                       <p className="text-sm text-foreground/70 italic border-l-2 border-primary/30 pl-4">
-                        "{aiPlan.motivationalQuote}"
+                        &ldquo;{aiPlan.motivationalQuote}&rdquo;
                       </p>
                     </div>
 

@@ -15,7 +15,7 @@ import '@testing-library/jest-dom';
 interface AddTaskModalTestProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (formData: any) => void;
+  onSubmit: (formData: unknown) => void;
 }
 
 const AddTaskModalTest: React.FC<AddTaskModalTestProps> = ({

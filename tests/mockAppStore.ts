@@ -296,7 +296,7 @@ export const useAppStore = create<AppState>()(
         if (!user) return;
 
         try {
-          const todayStr: string = new Date().toISOString().split('T')[0];
+          const _todayStr: string = new Date().toISOString().split('T')[0];
           let streak: Streak | undefined = await db.streaks
             .where('habitType')
             .equals(habitType)

@@ -50,6 +50,7 @@ jest.mock('../lib/db', () => ({
 
 jest.mock('../lib/encrypt', () => ({
   encryptionService: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     encryptUserData: jest.fn(async (d: any) => JSON.stringify(d)),
     decryptUserData: jest.fn(async (s: string) => JSON.parse(s)),
     setUserKey: jest.fn(),
@@ -362,7 +363,7 @@ export const useAppStore = create<AppState>()(
         if (!user) return;
 
         try {
-          const todayStr: string = new Date().toISOString().split('T')[0];
+          const _todayStr: string = new Date().toISOString().split('T')[0];
           let streak: Streak | undefined = await db.streaks
             .where('habitType')
             .equals(habitType)
