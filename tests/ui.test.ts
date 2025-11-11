@@ -1,3 +1,62 @@
+// Mock db and encryption to avoid importing Dexie and Web Crypto in Jest environment
+jest.mock('../lib/db', () => ({
+  db: {
+    tasks: {
+      where: jest.fn().mockReturnThis(),
+      equals: jest.fn().mockReturnThis(),
+      filter: jest.fn().mockReturnThis(),
+      toArray: jest.fn().mockResolvedValue([]),
+      add: jest.fn().mockResolvedValue('id'),
+      update: jest.fn().mockResolvedValue(1),
+      delete: jest.fn().mockResolvedValue(1),
+    },
+    behaviors: {
+      where: jest.fn().mockReturnThis(),
+      equals: jest.fn().mockReturnThis(),
+      filter: jest.fn().mockReturnThis(),
+      toArray: jest.fn().mockResolvedValue([]),
+      add: jest.fn().mockResolvedValue(true),
+    },
+    reflections: {
+      where: jest.fn().mockReturnThis(),
+      equals: jest.fn().mockReturnThis(),
+      filter: jest.fn().mockReturnThis(),
+      toArray: jest.fn().mockResolvedValue([]),
+      add: jest.fn().mockResolvedValue('rid'),
+      update: jest.fn().mockResolvedValue(1),
+      first: jest.fn().mockResolvedValue(undefined),
+    },
+    streaks: {
+      where: jest.fn().mockReturnThis(),
+      equals: jest.fn().mockReturnThis(),
+      filter: jest.fn().mockReturnThis(),
+      toArray: jest.fn().mockResolvedValue([]),
+      add: jest.fn().mockResolvedValue(true),
+      update: jest.fn().mockResolvedValue(1),
+      first: jest.fn().mockResolvedValue(undefined),
+    },
+    aiSummaries: {
+      add: jest.fn().mockResolvedValue(true),
+      where: jest.fn().mockReturnThis(),
+      equals: jest.fn().mockReturnThis(),
+      and: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue(null),
+    },
+    users: {
+      get: jest.fn().mockResolvedValue(null),
+    }
+  }
+}));
+
+jest.mock('../lib/encrypt', () => ({
+  encryptionService: {
+    encryptUserData: jest.fn(async (d: any) => JSON.stringify(d)),
+    decryptUserData: jest.fn(async (s: string) => JSON.parse(s)),
+    setUserKey: jest.fn(),
+    importKey: jest.fn(),
+  }
+}));
+
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { db, type User, type Task, type Reflection, type Behavior, type Streak } from '../lib/db';
@@ -110,6 +169,7 @@ export const useAppStore = create<AppState>()(
             title: taskData.title,
             category: taskData.category,
             scheduledTime: taskData.scheduledTime,
+            planForNextDay: taskData.planForNextDay,
           });
 
           const task: Omit<Task, 'id'> = {
@@ -117,6 +177,7 @@ export const useAppStore = create<AppState>()(
             title: taskData.title,
             category: taskData.category,
             scheduledTime: taskData.scheduledTime,
+            planForNextDay: taskData.planForNextDay,
             completed: false,
             createdAt: new Date(),
             encryptedData,
@@ -399,3 +460,13 @@ export const useAppStore = create<AppState>()(
     }
   )
 ); 
+
+// Basic smoke test to ensure this test file is not empty and the store initializes
+describe('UI store (smoke)', () => {
+  test('initial state', () => {
+    const state = useAppStore.getState();
+    expect(state.theme).toBe('light');
+    expect(Array.isArray(state.tasks)).toBe(true);
+    expect(state.tasks.length).toBe(0);
+  });
+});

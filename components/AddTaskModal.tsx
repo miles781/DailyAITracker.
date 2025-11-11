@@ -18,6 +18,7 @@ export default function AddTaskModal({ isOpen, onClose, editTask }: AddTaskModal
     title: editTask?.title || '',
     category: editTask?.category || 'personal' as Task['category'],
     scheduledTime: editTask?.scheduledTime || '',
+    planForNextDay: editTask?.planForNextDay || false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,7 +45,7 @@ export default function AddTaskModal({ isOpen, onClose, editTask }: AddTaskModal
         });
       }
       onClose();
-      setFormData({ title: '', category: 'personal', scheduledTime: '' });
+      setFormData({ title: '', category: 'personal', scheduledTime: '', planForNextDay: false });
     } catch (error) {
       console.error('Error saving task:', error);
     } finally {
@@ -106,7 +107,7 @@ export default function AddTaskModal({ isOpen, onClose, editTask }: AddTaskModal
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="input-base"
+                    className="input-base min-w-0 w-full overflow-hidden text-ellipsis"
                     placeholder="What do you want to accomplish?"
                     required
                     autoFocus
@@ -149,6 +150,20 @@ export default function AddTaskModal({ isOpen, onClose, editTask }: AddTaskModal
                     value={formData.scheduledTime}
                     onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
                     className="input-base"
+                  />
+                </div>
+
+                {/* Plan for Tomorrow Toggle */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors">
+                  <label htmlFor="planForNextDay" className="text-sm font-semibold text-foreground cursor-pointer">
+                    📅 Plan for Tomorrow
+                  </label>
+                  <input
+                    id="planForNextDay"
+                    type="checkbox"
+                    checked={formData.planForNextDay}
+                    onChange={(e) => setFormData({ ...formData, planForNextDay: e.target.checked })}
+                    className="w-5 h-5 accent-primary cursor-pointer rounded"
                   />
                 </div>
 

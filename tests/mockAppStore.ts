@@ -1,7 +1,11 @@
+// This file exposes a mocked app store used in tests (moved out of .test to avoid Jest running it as a test)
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { db, type User, type Task, type Reflection, type Behavior, type Streak } from '../lib/db';
 import { encryptionService } from '../lib/encrypt';
+
+// Valid behavior types
+type BehaviorType = 'task_add' | 'task_complete' | 'task_skip' | 'reflection_add' | 'app_open';
 
 interface AuthState {
   user: User | null;
@@ -34,7 +38,7 @@ interface ReflectionState {
 }
 
 interface BehaviorState {
-  logBehavior: (type: Behavior['type'], action: string, data?: any) => Promise<void>;
+  logBehavior: (type: BehaviorType, action: string, data?: Record<string, unknown>) => Promise<void>;
 }
 
 interface StreakState {
@@ -62,10 +66,10 @@ export const useAppStore = create<AppState>()(
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
-      setIsLoading: (isLoading) => set({ isLoading }),
+      setUser: (user: User | null) => set({ user, isAuthenticated: !!user }),
+      setIsLoading: (isLoading: boolean) => set({ isLoading }),
 
-      loadUserData: async () => {
+      loadUserData: async (): Promise<void> => {
         const { user } = get();
         if (!user) return;
 
@@ -82,12 +86,12 @@ export const useAppStore = create<AppState>()(
       filteredTasks: [],
       selectedDate: new Date(),
 
-      loadTasks: async () => {
+      loadTasks: async (): Promise<void> => {
         const { user } = get();
         if (!user) return;
 
         try {
-          const tasks = await db.tasks
+          const tasks: Task[] = await db.tasks
             .where('userId')
             .equals(user.id)
             .toArray();
@@ -98,22 +102,19 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      addTask: async (taskData) => {
+      addTask: async (taskData: Omit<Task, 'id' | 'userId' | 'encryptedData' | 'createdAt'>): Promise<void> => {
         const { user } = get();
         if (!user) throw new Error('User not authenticated');
 
         try {
-          const encryptedData = await encryptionService.encryptUserData({
+          const encryptedData: string = await encryptionService.encryptUserData({
             title: taskData.title,
             category: taskData.category,
             scheduledTime: taskData.scheduledTime,
             planForNextDay: taskData.planForNextDay,
           });
 
-          // Create full Task object including id before adding to Dexie.
-          const id = crypto.randomUUID();
-          const taskToAdd: Task = {
-            id,
+          const task: Omit<Task, 'id'> = {
             userId: user.id,
             title: taskData.title,
             category: taskData.category,
@@ -124,76 +125,77 @@ export const useAppStore = create<AppState>()(
             encryptedData,
           };
 
-          await db.tasks.add(taskToAdd);
-
-          set((state) => ({
-            tasks: [...state.tasks, taskToAdd],
-            filteredTasks: [...state.filteredTasks, taskToAdd],
+          const id: string = await db.tasks.add(task as Task);
+          const newTask: Task = { ...task, id } as Task;
+          
+          set((state: AppState) => ({
+            tasks: [...state.tasks, newTask],
+            filteredTasks: [...state.filteredTasks, newTask],
           }));
 
           get().logBehavior('task_add', `Added task: ${taskData.title}`);
         } catch (error) {
           console.error('Error adding task:', error);
-          throw error;
         }
       },
 
-      updateTask: async (id, updates) => {
+      updateTask: async (id: string, updates: Partial<Task>): Promise<void> => {
         try {
           await db.tasks.update(id, updates);
-          set((state) => ({
-            tasks: state.tasks.map(task => task.id === id ? { ...task, ...updates } : task),
-            filteredTasks: state.filteredTasks.map(task => task.id === id ? { ...task, ...updates } : task),
+          set((state: AppState) => ({
+            tasks: state.tasks.map((task: Task) => task.id === id ? { ...task, ...updates } : task),
+            filteredTasks: state.filteredTasks.map((task: Task) => task.id === id ? { ...task, ...updates } : task),
           }));
         } catch (error) {
           console.error('Error updating task:', error);
-          throw error;
         }
       },
 
-      deleteTask: async (id) => {
+      deleteTask: async (id: string): Promise<void> => {
         try {
+          const taskToDelete: Task | undefined = get().tasks.find((task: Task) => task.id === id);
+          
           await db.tasks.delete(id);
-          set((state) => ({
-            tasks: state.tasks.filter(task => task.id !== id),
-            filteredTasks: state.filteredTasks.filter(task => task.id !== id),
+          set((state: AppState) => ({
+            tasks: state.tasks.filter((task: Task) => task.id !== id),
+            filteredTasks: state.filteredTasks.filter((task: Task) => task.id !== id),
           }));
-          get().logBehavior('task_delete', `Deleted task: ${id}`);
+          
+          get().logBehavior('task_skip', `Deleted task: ${taskToDelete?.title || id}`);
         } catch (error) {
           console.error('Error deleting task:', error);
-          throw error;
         }
       },
 
-      toggleTaskCompletion: async (id) => {
-        const task = get().tasks.find(t => t.id === id);
+      toggleTaskCompletion: async (id: string): Promise<void> => {
+        const task: Task | undefined = get().tasks.find((t: Task) => t.id === id);
         if (!task) return;
 
-        const updates = {
+        const updates: Partial<Task> = {
           completed: !task.completed,
           completedAt: !task.completed ? new Date() : undefined,
         };
 
         await get().updateTask(id, updates);
         
-        const action = updates.completed ? 'task_complete' : 'task_uncomplete';
-        get().logBehavior(action, `Task ${updates.completed ? 'completed' : 'uncompleted'}: ${task.title}`);
+        const behaviorType: BehaviorType = updates.completed ? 'task_complete' : 'task_skip';
+        get().logBehavior(behaviorType, `Task ${updates.completed ? 'completed' : 'skipped'}: ${task.title}`);
         
         if (updates.completed) {
           get().updateStreak('daily_tasks', true);
         }
       },
 
-      filterTasksByCategory: (category) => {
+      filterTasksByCategory: (category: Task['category'] | 'all'): void => {
         const { tasks } = get();
         if (category === 'all') {
           set({ filteredTasks: tasks });
         } else {
-          set({ filteredTasks: tasks.filter(task => task.category === category) });
+          set({ filteredTasks: tasks.filter((task: Task) => task.category === category) });
         }
       },
 
-      filterTasksByDate: (date) => {
+      filterTasksByDate: (date: Date): void => {
         set({ selectedDate: date });
       },
 
@@ -201,19 +203,17 @@ export const useAppStore = create<AppState>()(
       reflections: [],
       todayReflection: null,
 
-      addReflection: async (reflectionData) => {
+      addReflection: async (reflectionData: Omit<Reflection, 'id' | 'userId' | 'encryptedData'>): Promise<void> => {
         const { user } = get();
         if (!user) throw new Error('User not authenticated');
 
         try {
-          const encryptedData = await encryptionService.encryptUserData({
+          const encryptedData: string = await encryptionService.encryptUserData({
             mood: reflectionData.mood,
             text: reflectionData.text,
           });
 
-          const id = crypto.randomUUID();
-          const reflection: Reflection = {
-            id,
+          const reflection: Omit<Reflection, 'id'> = {
             userId: user.id,
             date: reflectionData.date,
             mood: reflectionData.mood,
@@ -221,43 +221,42 @@ export const useAppStore = create<AppState>()(
             encryptedData,
           };
 
-          await db.reflections.add(reflection);
+          const id: string = await db.reflections.add(reflection as Reflection);
+          const newReflection: Reflection = { ...reflection, id } as Reflection;
           
-          set((state) => ({
-            reflections: [...state.reflections, reflection],
-            todayReflection: reflection,
+          set((state: AppState) => ({
+            reflections: [...state.reflections, newReflection],
+            todayReflection: newReflection,
           }));
 
           get().logBehavior('reflection_add', 'Added daily reflection');
         } catch (error) {
           console.error('Error adding reflection:', error);
-          throw error;
         }
       },
 
-      updateReflection: async (id, updates) => {
+      updateReflection: async (id: string, updates: Partial<Reflection>): Promise<void> => {
         try {
           await db.reflections.update(id, updates);
-          set((state) => ({
-            reflections: state.reflections.map(ref => ref.id === id ? { ...ref, ...updates } : ref),
+          set((state: AppState) => ({
+            reflections: state.reflections.map((ref: Reflection) => ref.id === id ? { ...ref, ...updates } : ref),
             todayReflection: state.todayReflection?.id === id ? { ...state.todayReflection, ...updates } : state.todayReflection,
           }));
         } catch (error) {
           console.error('Error updating reflection:', error);
-          throw error;
         }
       },
 
-      getTodayReflection: async () => {
+      getTodayReflection: async (): Promise<void> => {
         const { user } = get();
         if (!user) return;
 
         try {
-          const today = new Date().toISOString().split('T')[0];
-          const reflection = await db.reflections
+          const today: string = new Date().toISOString().split('T')[0];
+          const reflection: Reflection | undefined = await db.reflections
             .where('date')
             .equals(today)
-            .and(r => r.userId === user.id)
+            .filter((r: Reflection) => r.userId === user.id)
             .first();
 
           set({ todayReflection: reflection || null });
@@ -267,12 +266,12 @@ export const useAppStore = create<AppState>()(
       },
 
       // Behavior State
-      logBehavior: async (type, action, data = {}) => {
+      logBehavior: async (type: BehaviorType, action: string, data: Record<string, unknown> = {}): Promise<void> => {
         const { user } = get();
         if (!user) return;
 
         try {
-          const encryptedData = await encryptionService.encryptUserData(data);
+          const encryptedData: string = await encryptionService.encryptUserData(data);
 
           const behavior: Omit<Behavior, 'id'> = {
             userId: user.id,
@@ -282,7 +281,7 @@ export const useAppStore = create<AppState>()(
             encryptedData,
           };
 
-          await db.behaviors.add({ id: crypto.randomUUID(), ...behavior } as Behavior);
+          await db.behaviors.add(behavior as Behavior);
         } catch (error) {
           console.error('Error logging behavior:', error);
         }
@@ -292,17 +291,16 @@ export const useAppStore = create<AppState>()(
       streaks: [],
       currentStreak: 0,
 
-      updateStreak: async (habitType, completed) => {
+      updateStreak: async (habitType: string, completed: boolean): Promise<void> => {
         const { user } = get();
         if (!user) return;
 
-        // Basic streak implementation
         try {
-          const today = new Date().toISOString().split('T')[0];
-          let streak = await db.streaks
+          const todayStr: string = new Date().toISOString().split('T')[0];
+          let streak: Streak | undefined = await db.streaks
             .where('habitType')
             .equals(habitType)
-            .and(s => s.userId === user.id)
+            .filter((s: Streak) => s.userId === user.id)
             .first();
 
           if (!streak) {
@@ -317,15 +315,15 @@ export const useAppStore = create<AppState>()(
             };
             await db.streaks.add(streak);
           } else {
-            const lastUpdated = new Date(streak.lastUpdated);
-            const today = new Date();
+            const lastUpdated: Date = new Date(streak.lastUpdated);
+            const today: Date = new Date();
             
             if (lastUpdated.toDateString() === today.toDateString()) {
               // Already updated today
               return;
             }
 
-            const yesterday = new Date(today);
+            const yesterday: Date = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
 
             if (lastUpdated.toDateString() === yesterday.toDateString() && completed) {
@@ -346,7 +344,7 @@ export const useAppStore = create<AppState>()(
           }
 
           // Update store
-          const streaks = await db.streaks
+          const streaks: Streak[] = await db.streaks
             .where('userId')
             .equals(user.id)
             .toArray();
@@ -357,17 +355,17 @@ export const useAppStore = create<AppState>()(
         }
       },
 
-      getCurrentStreak: async () => {
+      getCurrentStreak: async (): Promise<void> => {
         const { user } = get();
         if (!user) return;
 
         try {
-          const streaks = await db.streaks
+          const streaks: Streak[] = await db.streaks
             .where('userId')
             .equals(user.id)
             .toArray();
           
-          const dailyStreak = streaks.find(s => s.habitType === 'daily_tasks');
+          const dailyStreak: Streak | undefined = streaks.find((s: Streak) => s.habitType === 'daily_tasks');
           set({ 
             streaks, 
             currentStreak: dailyStreak?.currentCount || 0 
@@ -381,14 +379,14 @@ export const useAppStore = create<AppState>()(
       isAddTaskModalOpen: false,
       isReflectionModalOpen: false,
       theme: 'light',
-      setAddTaskModalOpen: (open) => set({ isAddTaskModalOpen: open }),
-      setReflectionModalOpen: (open) => set({ isReflectionModalOpen: open }),
-      toggleTheme: () => set((state) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
+      setAddTaskModalOpen: (open: boolean) => set({ isAddTaskModalOpen: open }),
+      setReflectionModalOpen: (open: boolean) => set({ isReflectionModalOpen: open }),
+      toggleTheme: () => set((state: AppState) => ({ theme: state.theme === 'light' ? 'dark' : 'light' })),
     }),
     {
       name: 'dayflow-store',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
+      partialize: (state: AppState) => ({ 
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         theme: state.theme 

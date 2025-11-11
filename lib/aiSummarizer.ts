@@ -20,6 +20,7 @@ export interface AnonymizedData {
     moodCorrelation: number;
     peakProductivity: string;
   };
+  sentiment?: number; // -1 (negative) .. 1 (positive)
 }
 
 export class AISummarizer {
@@ -27,7 +28,17 @@ export class AISummarizer {
     const decryptedItems = await Promise.all(
       items.map(async (item) => {
         try {
-          return await encryptionService.decryptUserData(item.encryptedData);
+          const parsed = await encryptionService.decryptUserData(item.encryptedData);
+          // Normalize createdAt if it's a string so downstream logic can use Date methods
+          if (parsed && (parsed as any).createdAt && typeof (parsed as any).createdAt === 'string') {
+            try {
+              (parsed as any).createdAt = new Date((parsed as any).createdAt);
+            } catch (e) {
+              // leave as-is if conversion fails
+            }
+          }
+
+          return parsed;
         } catch (error) {
           console.error('Decryption error:', error);
           return null;
@@ -120,15 +131,44 @@ export class AISummarizer {
         peakProductivity: this.findPeakProductivity(behaviors),
       };
 
+      // Sentiment analysis across decrypted reflections
+      const sentiment = this.analyzeSentiment(decryptedReflections);
+
       return {
         summary,
         patterns,
+        sentiment,
       };
     } catch (error) {
       console.error('Error generating summary:', error);
       // Return default data on error
       return this.getDefaultSummary();
     }
+  }
+
+  // Public sentiment analyzer: returns -1 (negative) .. 1 (positive)
+  analyzeSentiment(reflections: Array<{ mood?: number; text?: string }>): number {
+    if (!reflections || reflections.length === 0) return 0;
+
+    const positiveWords = ['good', 'great', 'focused', 'productive', 'completed', 'success', 'happy', 'energized', 'better', 'improved'];
+    const negativeWords = ['tired', 'missed', 'failed', 'struggle', 'worse', 'sad', 'angry', 'frustrat', 'anxious', 'overwhelmed'];
+
+    let score = 0;
+    reflections.forEach((r) => {
+      const text = (r.text || '').toLowerCase();
+      let local = 0;
+      positiveWords.forEach(w => { if (text.includes(w)) local += 1; });
+      negativeWords.forEach(w => { if (text.includes(w)) local -= 1; });
+      // incorporate mood if present (scale 1-5 -> -1..1)
+      if (typeof r.mood === 'number') {
+        local += (r.mood - 3) / 2; // mood 3 -> 0, 5 -> +1, 1 -> -1
+      }
+      score += Math.max(-3, Math.min(3, local));
+    });
+
+    const normalized = score / (reflections.length * 3);
+    // clamp to -1..1
+    return Math.max(-1, Math.min(1, normalized));
   }
 
   private calculateProductiveHours(behaviors: any[]): string[] {
@@ -187,7 +227,18 @@ export class AISummarizer {
     
     // Simplified correlation calculation
     const completedTasksByDay = tasks.reduce((acc, task) => {
-      const date = task.createdAt.toISOString().split('T')[0];
+      // Support both Date objects and ISO date strings
+      let createdAtIso: string;
+      try {
+        if (task.createdAt instanceof Date) {
+          createdAtIso = task.createdAt.toISOString();
+        } else {
+          createdAtIso = new Date(task.createdAt).toISOString();
+        }
+      } catch (e) {
+        createdAtIso = new Date().toISOString();
+      }
+      const date = createdAtIso.split('T')[0];
       if (!acc[date]) acc[date] = { completed: 0, total: 0 };
       if (task.completed) acc[date].completed++;
       acc[date].total++;
@@ -251,6 +302,8 @@ export class AISummarizer {
       const anonymizedData = await this.generateSummary(userId);
       
       // Remove any potentially identifiable information
+      const successProbability = this.forecastGoalCompletion(anonymizedData.summary.completionRate, anonymizedData.summary.reflectionConsistency);
+
       const safeData = {
         productivity: {
           taskCompletion: Math.round(anonymizedData.summary.completionRate),
@@ -263,6 +316,9 @@ export class AISummarizer {
         },
         patterns: anonymizedData.patterns,
         productiveHours: anonymizedData.summary.productiveHours,
+        forecasting: {
+          goalSuccessProbability: Math.round(successProbability * 100) / 100
+        },
       };
 
       return JSON.stringify(safeData, null, 2);
@@ -270,6 +326,17 @@ export class AISummarizer {
       console.error('Error preparing AI request data:', error);
       return JSON.stringify(this.getDefaultSummary(), null, 2);
     }
+  }
+
+  // Simple goal forecasting: returns probability (0..1) of hitting next-day goals
+  forecastGoalCompletion(completionRate: number, reflectionConsistency: number): number {
+    // completionRate is 0..100, reflectionConsistency is 0..100
+    const completionFactor = Math.max(0, Math.min(1, completionRate / 100));
+    const consistencyFactor = Math.max(0, Math.min(1, reflectionConsistency / 100));
+
+    // Weighted combination: completion is more important (70%), consistency less (30%)
+    const probability = 0.7 * completionFactor + 0.3 * consistencyFactor;
+    return Math.max(0, Math.min(1, probability));
   }
 }
 

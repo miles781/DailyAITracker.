@@ -18,6 +18,7 @@ export interface Task {
   title: string;
   category: 'work' | 'personal' | 'health' | 'learning' | 'other';
   scheduledTime?: string;
+  planForNextDay?: boolean;
   completed: boolean;
   completedAt?: Date;
   createdAt: Date;

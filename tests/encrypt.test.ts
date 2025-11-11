@@ -1,6 +1,12 @@
-import { encryptionService } from '../lib/encrypt';
+// Only run these tests if WebCrypto (crypto.subtle) is available in the environment.
+let encryptionService: any;
+const hasWebCrypto = typeof global.crypto !== 'undefined' && !!global.crypto.subtle;
+if (hasWebCrypto) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  encryptionService = require('../lib/encrypt').encryptionService;
+}
 
-describe('Encryption Service', () => {
+(hasWebCrypto ? describe : describe.skip)('Encryption Service', () => {
   let testKey: CryptoKey;
 
   beforeAll(async () => {

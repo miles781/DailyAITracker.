@@ -22,12 +22,21 @@ jest.mock('../lib/db', () => ({
       filter: jest.fn().mockReturnThis(),
       toArray: jest.fn().mockResolvedValue([]),
     },
+    aiSummaries: {
+      add: jest.fn().mockResolvedValue('ai-summary-id'),
+      where: jest.fn().mockReturnThis(),
+      equals: jest.fn().mockReturnThis(),
+      and: jest.fn().mockReturnThis(),
+      first: jest.fn().mockResolvedValue(null),
+    },
   },
 }));
 
 jest.mock('../lib/encrypt', () => ({
   encryptionService: {
     decryptUserData: jest.fn().mockResolvedValue({}),
+    encryptUserData: jest.fn().mockResolvedValue('encrypted'),
+    setUserKey: jest.fn(),
   },
 }));
 
